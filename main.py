@@ -43,11 +43,10 @@ def neightboors_dictionary(tiles):
     pass
 
 
-
 def main():
     image = np.zeros((10, 10))
 
-    tiles = load_images("D:\Workspace\Python\IA para jogos\WFC_MINE\Images")
+    tiles = load_images("D:\Workspace\Python\IA para jogos\WFC_4GAMES\Images")
 
     # Fill a matrix with -1 that means any image can take this place
     potential = np.full((10, 10), -1)
@@ -61,6 +60,7 @@ def main():
     index = np.random.randint(0, len(tiles))
     potential[x][y] = tiles[index].name
     print(tiles[index].name, "\n")
+    print(tiles[index].get_neightboor())
     print(potential)
 
     # TODO make a dict of all neightboors

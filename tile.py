@@ -10,11 +10,8 @@ class Tile:
     """
     def __init__(self, name, neightboors):
         self.name = name
-        self.n_right = neightboors[0]
-        self.n_up = neightboors[1]
-        self.n_left = neightboors[2]
-        self.n_down = neightboors[3]
         self.neightboors = neightboors
+        self.n_sides = { "direita":neightboors[0], "cima":neightboors[1], "esquerda":neightboors[2], "baixo":neightboors[3]}
 
     # TODO use later
     # def __init__(self, name, neightboors, image):
@@ -37,11 +34,4 @@ class Tile:
         Return a specific direction neightboor
         @param direction - The direction to get the neightboor of
         """
-        if direction == "R":
-            return self.n_right
-        elif direction == "U":
-            return self.n_up
-        elif direction == "L":
-            return self.n_left
-        else: 
-            return self.n_down
+        return n_sides.get(direction)
