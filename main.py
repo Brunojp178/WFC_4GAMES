@@ -3,7 +3,6 @@ from tile import Tile
 from collections import namedtuple
 import os
 
-
 # TODO wave function collapse
 # TODO make a matrix to represent the image, fill the image with possible values and short it with the neightboor values
 
@@ -30,18 +29,17 @@ def load_images(dir_path):
         info = line.split(";")
         name = info[0]
         # Neightboors now will be the name of the image file.
-        neightboors = info[1].replace("[", "").replace("]", "").split(",")
+        neightboors = info[1].replace("[", "").replace("]", "").replace("\n", "").split(",")
         tile = Tile(name, neightboors)
         tiles.append(tile)
     
     return tiles
 
-def neightboors_dictionary(tiles):
-    """
-    Save the array info into a dictionary
-    """
-    pass
+def random_neightboor(tile:Tile, tile_pos):
+    x, y = tile_pos
+    height, width = potential.shape
 
+    
 
 def main():
     image = np.zeros((10, 10))
@@ -49,19 +47,24 @@ def main():
     tiles = load_images("D:\Workspace\Python\IA para jogos\WFC_4GAMES\Images")
 
     # Fill a matrix with -1 that means any image can take this place
-    potential = np.full((10, 10), -1)
+    global potential
+    potential = np.full((10, 9), -1)
 
     print(potential, "\n\n")
 
     # TODO select a random point in the matrix
+    # Limiting the index of random choice
+    height, width = potential.shape
 
-    x = np.random.randint(0, 10)
-    y = np.random.randint(0, 10)
+    x = np.random.randint(0, width)
+    y = np.random.randint(0, height)
     index = np.random.randint(0, len(tiles))
+    print(tiles[index].name)    
+
     potential[x][y] = tiles[index].name
-    print(tiles[index].name, "\n")
-    print(tiles[index].get_neightboor())
     print(potential)
+    # TODO remember potential is a number (potential[x][y] doesn't return a tile)
+    random_neightboor(tiles[index], (x, y))
 
     # TODO make a dict of all neightboors
     # TODO Based on this random value fill the matrix with the neightboors
