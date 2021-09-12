@@ -1,16 +1,15 @@
 import numpy as np
 from tile import Tile
 import collections
-from collections import namedtuple
+# from collections import namedtuple
 import os
+import cv2
 
-# TODO wave function collapse
-# TODO make a matrix to represent the image, fill the image with possible values and short it with the neightboor values
 
-# We can have 2 aproaches, start with all number interpretation and change it to the images later or learn how to do it
-# from the start with images.
-# For the sake of my mind we'll use nambers as image names.
 def verifica():
+    """
+    Verify if the matrix has empty spaces
+    """
     if int("-1") in potential:
         return False
     else:
@@ -34,15 +33,20 @@ def load_images(dir_path):
     for line in rules_file:
         info = line.split(";")
         name = info[0]
+        image = cv2.imread(dir_path + "/" + name + ".png")
+
         # neighbours now will be the name of the image file.
         neighbours = info[1].replace("[", "").replace("]", "").replace("\n", "").split(",")
-        tile = Tile(name, neighbours)
+        tile = Tile(name, neighbours, image)
         tiles.append(tile)
     
     return tiles
 
 def empty_neighbour(tile_pos:(int, int)):
-    x, y = tile_pos
+    """
+    Check around a cell for empty spaces (-1 values)
+    """
+    y, x = tile_pos
     height, width = potential.shape
     height -= 1
     width -= 1
@@ -52,95 +56,94 @@ def empty_neighbour(tile_pos:(int, int)):
     if verifica():
         return empty
 
-    if x != 0:
-        if potential[x - 1][y] == -1:
-            empty[2] = ((x - 1, y))
-
-    if x != width:
-        if potential[x+1][y] == -1:
-            empty[0] = ((x + 1, y))
-    
     if y != 0:
-        if potential[x][y - 1] == -1:
-            empty[1] = ((x, y - 1))
+        if potential[y - 1][x] == -1:
+            empty[2] = ((y - 1, x))
+
+    if y != width:
+        if potential[y+1][x] == -1:
+            empty[0] = ((y + 1, x))
     
-    if y != height:
-        if potential[x][y + 1] == -1:
-            empty[3] = ((x, y + 1))
+    if x != 0:
+        if potential[y][x - 1] == -1:
+            empty[1] = ((y, x - 1))
     
-    print(empty)
+    if x != height:
+        if potential[y][x + 1] == -1:
+            empty[3] = ((y, x + 1))
+    
     return empty
 
 def random_neighbour(tile_pos:(int, int)):
     """
-    Return the x, y coordinate of a random cell around one tile.
+    Return the y, x coordinate of a random cell around one tile.
     """
-    x, y = tile_pos
+    y, x = tile_pos
     height, width = potential.shape
     height -= 1
     width -= 1
 
-    # Possible values of x
-    target_x = [x + 1, x - 1]
+    # Possible values of y
     target_y = [y + 1, y - 1]
+    target_x = [x + 1, x - 1]
 
     # if the father tile is on a border, remove the out of range index of the possible values for target
-    if (x == 0):
-        target_x[0] = x + 2
-    elif(x == width):
-        target_x[1] = x - 2
-
     if (y == 0):
         target_y[0] = y + 2
-    elif(y == height):
+    elif(y == width):
         target_y[1] = y - 2
 
-    # Recursive fucker
-    final_x = np.random.choice(target_x)
-    final_y = np.random.choice(target_y)
+    if (x == 0):
+        target_x[0] = x + 2
+    elif(x == height):
+        target_x[1] = x - 2
 
-    if final_x == -1:
-        final_x += 1
+    # Recursive fucker
+    final_y = np.random.choice(target_y)
+    final_x = np.random.choice(target_x)
 
     if final_y == -1:
         final_y += 1
 
-    if final_x == 10:
-        final_x -= 1
+    if final_x == -1:
+        final_x += 1
 
     if final_y == 10:
         final_y -= 1
 
-    return (final_x, final_y)
+    if final_x == 10:
+        final_x -= 1
+
+    return (final_y, final_x)
 
 def check_around(tile_pos:(int, int)):
     """
     Return a list of possible values of a cell based on the requirements of its neighbours.
     """
-    cell_x, cell_y = tile_pos
+    cell_y, cell_x = tile_pos
     height, width = potential.shape
     height -= 1
     width -= 1
 
-    if cell_x == width:
+    if cell_y == width:
         right = -1
     else:
-        right = potential[cell_x + 1][cell_y]
+        right = potential[cell_y + 1][cell_x]
 
-    if cell_y == 0:
+    if cell_x == 0:
         up = -1
     else:
-        up = potential[cell_x][cell_y - 1]
+        up = potential[cell_y][cell_x - 1]
     
-    if cell_x == 0:
+    if cell_y == 0:
         left = -1
     else:
-        left = potential[cell_x - 1][cell_y]
+        left = potential[cell_y - 1][cell_x]
 
-    if cell_y == height:
+    if cell_x == height:
         down = -1
     else:
-        down = potential[cell_x][cell_y + 1]
+        down = potential[cell_y][cell_x + 1]
 
     right_requirements = None
     up_requirements = None
@@ -151,22 +154,18 @@ def check_around(tile_pos:(int, int)):
     for tile in tiles:
         if right != -1:
             if tile.name == str(right):
-                print("Cell on the right: ", right, tile.sides.get("esquerda"))
                 right_requirements = int(tile.sides.get("esquerda"))
         
         if up != -1:
             if tile.name == str(up):
-                print("Cell above: ", up, tile.sides.get("baixo"))
                 up_requirements = int(tile.sides.get("baixo"))
 
         if left != -1:
             if tile.name == str(left):
-                print("Cell on the left: ", left, tile.sides.get("direita"))
                 left_requirements = int(tile.sides.get("direita"))
 
         if down != -1:
             if tile.name == str(down):
-                print("Cell Below: ", down, tile.sides.get("cima"))
                 down_requirements = int(tile.sides.get("cima"))
 
     requirements = [right_requirements, up_requirements, left_requirements, down_requirements]
@@ -177,24 +176,21 @@ def check_around(tile_pos:(int, int)):
     return requirements
 
 def propagate(tile:Tile, tile_pos:(int, int)):
-    # TODO When propagating, check if can fill any of the neighbours of @param tile, if it can
-    # got to that position but not fill it, check the sides of this empty position and make a array of possible values of this cell
-    # if the cell can be, for ex. [0, 1] always choose the value diferent from 0, since 0 will have lower "weight"
-    # if the positions can be multiple numbers, ex. [1, 3, 0] choose some random one diferent from 0
-    # only put 0 if its the only choice.
-
+    """
+    Propagate values on the matrix from a specific cell
+    """
     if verifica():
         return 0
 
-    # Get all the cells around the tile and see if they are empty
+    # Get all the cells around the tile and check if they are empty
     # if neighbours cells are already filled, get a random one and propagate from it
     possible_neighbours = np.zeros(0, dtype=object)
     possible_neighbours = empty_neighbour(tile_pos)
 
     if possible_neighbours.count(None) == 4:
-        new_posX, new_posY = random_neighbour(tile_pos) # Positions of a random one
+        new_posY, new_posX = random_neighbour(tile_pos) # Positions of a random one
 
-        new_tile_name = potential[new_posX][new_posY]   # The name of this random one
+        new_tile_name = potential[new_posY][new_posX]   # The name of this random one
         new_tile = None
 
         # Note: the tiles list is the representation of the images in Tiles class 
@@ -203,14 +199,14 @@ def propagate(tile:Tile, tile_pos:(int, int)):
             if tile.name == str(new_tile_name):
                 new_tile = tile
         
-        propagate(new_tile, (new_posX, new_posY))
+        propagate(new_tile, (new_posY, new_posX))
     else:
         # Aux list that hold probabilities to use in np.random.choice(), making the probabilitie of None to be chose equal to 0
         for index, i in enumerate(possible_neighbours):
             if i == None:
-                for x in possible_neighbours:
-                    if x != None:
-                        possible_neighbours[index] = x
+                for y in possible_neighbours:
+                    if y != None:
+                        possible_neighbours[index] = y
                         break
         
         # creating an aux array filled with index based on possible_neighbours
@@ -219,45 +215,70 @@ def propagate(tile:Tile, tile_pos:(int, int)):
             aux.append(i)
         
         target_coord = possible_neighbours[np.random.choice(aux)]
-        target_x, target_y = target_coord
+        target_y, target_x = target_coord
         
         target_requirements = check_around(target_coord)
         
-        # TODO CHOOSE ONE OF THE VALUES TO FILL THE CELL
+        # Take out the None values on the target_requirements list
         for index, i in enumerate(target_requirements):
             if i == None:
-                for x in target_requirements:
-                    if x != None:
-                        target_requirements[index] = x
+                for y in target_requirements:
+                    if y != None:
+                        target_requirements[index] = y
                         break
-        
+
+        # if the only requirement is -1, we can put anything
         if target_requirements.count(-1) == 4:
-            # if the only requirement is -1, we can put anything
             target_requirements = np.full(4, int(np.random.choice(tiles).name))
-
-        # TODO Treat not to take any value
-        # [1, 1, 1, 1]
-
-        occurrences = collections.Counter(target_requirements)
-        # print(occurrences, max(occurrences))
-        target_value = max(occurrences)
-          
         
+        # Get the value that it's most required to fill the cell. ( ex. [1, 2, 2, 3], "2" will be chosen )
+        occurrences = collections.Counter(target_requirements)
+        target_value = max(occurrences)
+                
         if target_value == "-1":
             target_value = int(np.random.choice(tiles).name)
 
-        # Get the target as a Tile object
+        # Get the representation of target as a Tile object on the tiles list
         target_tile = None
         for tile in tiles:
             if tile.name == str(target_value):
                 target_tile = tile
 
-        potential[target_x][target_y] = int(target_value)
-        print("\n", target_value, type(target_value), target_coord, "\n", potential)
+        potential[target_y][target_x] = int(target_value)
+        # To debug
+        # print("\n", target_value, type(target_value), target_coord, "\n", potential)
         propagate(target_tile, target_coord)
 
-def rotate_matrix(matrix):
-    return np.rot90(matrix)
+def make_image():
+    # TODO roda toda a potential
+    # rodar todo o arquivo e a potential
+    height, width = potential.shape
+    
+    # blank image
+    img = np.zeros((tiles[0].image.shape))
+    images_horizontal = []
+    images_vertical = []
+
+    for y in range(height):
+        for x in range(width):
+            tile_name = str(potential[y][x])
+            for tile in tiles:
+                if tile.name == tile_name:
+                    images_horizontal.append(tile.image)
+        
+        aux_img = cv2.hconcat(images_horizontal)
+        images_horizontal.clear()
+
+        images_vertical.append(aux_img)
+    
+    result_img = cv2.vconcat(images_vertical)
+    cv2.imshow("Result", result_img)
+    cv2.waitKey(0)
+    
+    
+
+# def rotate_matrix(matrix):
+#     return np.rot90(matrix)
 
 def main():
     image = np.zeros((10, 10))
@@ -268,28 +289,27 @@ def main():
     # Fill a matrix with -1 that means any image can take this place
     global potential
     potential = np.full((10, 10), -1)
-    print(potential, "\n\n")
+    print(potential, "\n")
 
     # TODO select a random point in the matrix
     # Limiting the index of random choice
     height, width = potential.shape
 
-    x = np.random.randint(0, width)
-    y = np.random.randint(0, height)
+    y = np.random.randint(0, width)
+    x = np.random.randint(0, height)
     index = np.random.randint(0, len(tiles))
-    print(tiles[index].name)    
+    print("First tile:", tiles[index].name)
 
-    potential[x][y] = tiles[index].name
+    potential[y][x] = tiles[index].name
     print(potential)
-    # TODO remember potential is a number (potential[x][y] doesn't return a tile)
-    random_neighbour((x, y))
+    # TODO remember potential[y][x] is a number (potential[y][x] doesn'y return a tile)
+    random_neighbour((y, x))
     
-    propagate(tiles[index], (x, y))
+    propagate(tiles[index], (y, x))
 
-    result = rotate_matrix(potential)
-    print("Rotated matrix: \n", result)
-    # TODO make a dict of all neighbours
-    # TODO Based on this random value fill the matrix with the neighbours
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    make_image()
 
 if __name__ == "__main__":
     main() 
