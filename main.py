@@ -1,5 +1,6 @@
 import numpy as np
 from tile import Tile
+import collections
 from collections import namedtuple
 import os
 
@@ -150,18 +151,22 @@ def check_around(tile_pos:(int, int)):
     for tile in tiles:
         if right != -1:
             if tile.name == str(right):
+                print("Cell on the right: ", right, tile.sides.get("esquerda"))
                 right_requirements = int(tile.sides.get("esquerda"))
         
         if up != -1:
             if tile.name == str(up):
+                print("Cell above: ", up, tile.sides.get("baixo"))
                 up_requirements = int(tile.sides.get("baixo"))
 
         if left != -1:
             if tile.name == str(left):
+                print("Cell on the left: ", left, tile.sides.get("direita"))
                 left_requirements = int(tile.sides.get("direita"))
 
         if down != -1:
             if tile.name == str(down):
+                print("Cell Below: ", down, tile.sides.get("cima"))
                 down_requirements = int(tile.sides.get("cima"))
 
     requirements = [right_requirements, up_requirements, left_requirements, down_requirements]
@@ -179,7 +184,7 @@ def propagate(tile:Tile, tile_pos:(int, int)):
     # only put 0 if its the only choice.
 
     if verifica():
-        exit()
+        return 0
 
     # Get all the cells around the tile and see if they are empty
     # if neighbours cells are already filled, get a random one and propagate from it
@@ -228,10 +233,15 @@ def propagate(tile:Tile, tile_pos:(int, int)):
         
         if target_requirements.count(-1) == 4:
             # if the only requirement is -1, we can put anything
-            # TODO For the sake of testing, it will be 1
             target_requirements = np.full(4, int(np.random.choice(tiles).name))
-    
-        target_value = np.random.choice(target_requirements)  
+
+        # TODO Treat not to take any value
+        # [1, 1, 1, 1]
+
+        occurrences = collections.Counter(target_requirements)
+        # print(occurrences, max(occurrences))
+        target_value = max(occurrences)
+          
         
         if target_value == "-1":
             target_value = int(np.random.choice(tiles).name)
@@ -246,6 +256,8 @@ def propagate(tile:Tile, tile_pos:(int, int)):
         print("\n", target_value, type(target_value), target_coord, "\n", potential)
         propagate(target_tile, target_coord)
 
+def rotate_matrix(matrix):
+    return np.rot90(matrix)
 
 def main():
     image = np.zeros((10, 10))
@@ -273,6 +285,9 @@ def main():
     random_neighbour((x, y))
     
     propagate(tiles[index], (x, y))
+
+    result = rotate_matrix(potential)
+    print("Rotated matrix: \n", result)
     # TODO make a dict of all neighbours
     # TODO Based on this random value fill the matrix with the neighbours
 
